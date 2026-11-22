@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>하루 칼로리 계산 & 식단 관리</title>
+<style>
+:root{--bg:#f4f7f5;--card:#fff;--ink:#20312a;--muted:#718078;--green:#267a55;--green2:#e7f4ec;--line:#e5ece7;--orange:#f2a65a;--red:#d95c5c;--shadow:0 8px 28px rgba(31,65,46,.07)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,"Malgun Gothic",sans-serif}
+header{background:linear-gradient(120deg,#1f704d,#3a9a6c);color:#fff;padding:30px 22px 56px}
+.head{max-width:1100px;margin:auto}header .tag{font-size:12px;letter-spacing:1.5px;opacity:.8}h1{font-size:29px;margin:9px 0 7px}header p{margin:0;opacity:.88;font-size:14px}
+main{max-width:1100px;margin:-32px auto 50px;padding:0 20px}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
+.card,.panel{background:var(--card);border:1px solid var(--line);border-radius:17px;box-shadow:var(--shadow)}
+.metric{padding:20px}.metric .label{font-size:13px;color:var(--muted)}.metric .value{font-size:27px;font-weight:750;margin-top:9px}.metric small{color:var(--muted);font-size:12px}
+.layout{display:grid;grid-template-columns:1.05fr .95fr;gap:18px}.panel{padding:22px;margin-bottom:18px}
+h2{font-size:17px;margin:0 0 17px}.sub{color:var(--muted);font-size:12px;font-weight:400}
+label{display:block;font-size:13px;font-weight:650;margin:12px 0 7px}
+input,select{width:100%;border:1px solid #dce6df;border-radius:10px;padding:12px 13px;font-size:14px;background:#fff;color:var(--ink);outline:none}
+input:focus,select:focus{border-color:var(--green);box-shadow:0 0 0 3px #267a5518}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.btn{border:0;border-radius:10px;padding:12px 15px;font-weight:700;cursor:pointer;font-size:14px;transition:.15s}
+.primary{background:var(--green);color:#fff}.primary:hover{background:#1d6243}.soft{background:var(--green2);color:var(--green)}.danger{background:#fff0ef;color:var(--red);padding:7px 10px;font-size:12px}
+.full{width:100%;margin-top:16px}.food-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-height:210px;overflow:auto}
+.food-chip{border:1px solid var(--line);background:#fbfdfb;border-radius:9px;padding:9px 7px;text-align:left;cursor:pointer;font-size:12px;color:var(--ink)}
+.food-chip:hover{border-color:var(--green);background:var(--green2)}.food-chip b{display:block;font-size:13px;margin-bottom:3px}.food-chip span{color:var(--muted)}
+.progress-wrap{background:#edf2ee;border-radius:99px;height:12px;overflow:hidden;margin:14px 0 8px}.progress{height:100%;width:0;background:linear-gradient(90deg,#45a879,#267a55);border-radius:99px;transition:width .25s}
+.progress-info{display:flex;justify-content:space-between;color:var(--muted);font-size:12px}
+.meal-bars{display:grid;gap:12px}.meal-line{display:grid;grid-template-columns:42px 1fr 78px;align-items:center;gap:10px;font-size:12px}.bar{height:8px;background:#edf2ee;border-radius:20px;overflow:hidden}.bar i{display:block;height:100%;background:#72b68f;border-radius:20px}
+.records{display:grid;gap:9px}.record{display:flex;justify-content:space-between;align-items:center;border:1px solid var(--line);padding:11px 12px;border-radius:11px;gap:8px}.record strong{font-size:13px}.record small{display:block;color:var(--muted);margin-top:4px}.record-right{display:flex;align-items:center;gap:10px;white-space:nowrap;font-weight:700;font-size:13px}
+.notice{font-size:12px;color:var(--muted);line-height:1.6;margin-top:15px}.empty{text-align:center;color:var(--muted);padding:25px 8px;font-size:13px}
+.lookup-result{margin-top:12px;padding:12px;background:#f5faf6;border-radius:10px;color:var(--green);font-size:13px;min-height:42px}
+footer{text-align:center;color:#8a9890;font-size:11px;padding:8px 15px 30px}
+@media(max-width:760px){.summary{grid-template-columns:1fr 1fr}.summary .metric:last-child{grid-column:span 2}.layout{grid-template-columns:1fr}header{padding-bottom:52px}h1{font-size:24px}.panel{padding:18px}}
+@media(max-width:420px){main{padding:0 12px}.summary{gap:8px}.metric{padding:15px}.metric .value{font-size:22px}.food-grid{grid-template-columns:repeat(2,1fr)}.row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><div class="head"><div class="tag">DAILY FOOD TRACKER</div><h1>하루 칼로리 계산 & 식단 관리</h1><p>먹은 음식을 기록하고 하루 섭취 칼로리를 간편하게 확인해 보세요.</p></div></header>
+<main>
+<section class="summary">
+ <div class="card metric"><div class="label">오늘 섭취 칼로리</div><div class="value" id="totalTop">0 <small>kcal</small></div><small>기록한 음식의 합계</small></div>
+ <div class="card metric"><div class="label">하루 목표</div><div class="value" id="goalTop">2,000 <small>kcal</small></div><small>목표 칼로리는 변경 가능</small></div>
+ <div class="card metric"><div class="label">목표까지 남은 칼로리</div><div class="value" id="remainTop">2,000 <small>kcal</small></div><small id="remainCaption">목표 섭취량 기준</small></div>
+</section>
+<div class="layout">
+<div>
+ <section class="panel">
+  <h2>음식 섭취 기록</h2>
+  <label for="foodSelect">등록된 음식 선택</label>
+  <select id="foodSelect"><option value="">음식을 선택하세요</option></select>
+  <div class="row">
+   <div><label for="meal">식사 종류</label><select id="meal"><option>아침</option><option>점심</option><option>저녁</option><option>간식</option></select></div>
+   <div><label for="amount">섭취량 (인분)</label><input id="amount" type="number" min="0.01" step="0.1" value="1"></div>
+  </div>
+  <button class="btn primary full" id="addSelected">선택한 음식 기록하기</button>
+  <div style="height:1px;background:var(--line);margin:20px 0"></div>
+  <h2>직접 음식 입력 <span class="sub">· 목록에 없는 음식</span></h2>
+  <div class="row">
+   <div><label for="customName">음식 이름</label><input id="customName" placeholder="예: 샐러드"></div>
+   <div><label for="customCal">1인분 칼로리 (kcal)</label><input id="customCal" type="number" min="0.01" placeholder="예: 180"></div>
+  </div>
+  <button class="btn soft full" id="addCustom">직접 입력한 음식 기록하기</button>
+ </section>
+ <section class="panel">
+  <h2>음식 칼로리 조회</h2>
+  <label for="lookup">조회할 음식</label><input id="lookup" placeholder="음식 이름을 입력하세요">
+  <div class="lookup-result" id="lookupResult">음식 이름을 입력하면 칼로리를 확인할 수 있습니다.</div>
+  <h2 style="margin-top:20px">등록된 음식 목록 <span class="sub">· 1인분 기준</span></h2>
+  <div class="food-grid" id="foodGrid"></div>
+ </section>
+</div>
+<div>
+ <section class="panel">
+  <h2>하루 칼로리 분석</h2>
+  <div class="progress-info"><span>목표 대비 섭취량</span><b id="rate">0%</b></div>
+  <div class="progress-wrap"><div class="progress" id="progress"></div></div>
+  <div class="progress-info"><span id="progressLeft">0 kcal 섭취</span><span id="progressRight">목표 2,000 kcal</span></div>
+  <div style="height:1px;background:var(--line);margin:20px 0"></div>
+  <h2>식사 종류별 섭취량</h2><div class="meal-bars" id="mealBars"></div>
+  <div class="lookup-result" id="evaluation">아직 기록된 음식이 없습니다.</div>
+ </section>
+ <section class="panel">
+  <h2>하루 식단 기록 <span class="sub" id="recordCount">0건</span></h2>
+  <div class="records" id="records"><div class="empty">아직 기록된 음식이 없습니다.<br>왼쪽에서 음식을 추가해 보세요.</div></div>
+  <button class="btn soft full" id="clearAll">오늘 기록 전체 삭제</button>
+ </section>
+ <section class="panel">
+  <h2>하루 목표 칼로리 설정</h2>
+  <label for="goalInput">목표 칼로리 (kcal)</label>
+  <div class="row"><input id="goalInput" type="number" min="1" value="2000"><button class="btn primary" id="saveGoal">목표 변경</button></div>
+  <p class="notice">※ 음식 칼로리는 일반적인 1인분 기준의 대략적인 값입니다. 실제 칼로리는 조리법과 양에 따라 달라질 수 있습니다. 이 프로그램의 평가는 설정한 목표와의 비교이며 의학적 진단이 아닙니다.</p>
+ </section>
+</div>
+</div>
+</main>
+<footer>Daily Food Tracker · 기록은 이 브라우저에 자동 저장됩니다.</footer>
+<script>
+const foodDB={"밥":300,"김치찌개":250,"된장찌개":200,"불고기":350,"삼겹살":550,"치킨":300,"피자":280,"햄버거":500,"라면":500,"샌드위치":350,"계란":80,"바나나":100,"사과":95,"우유":130,"닭가슴살":165};
+const meals=["아침","점심","저녁","간식"];
+const today=new Date().toLocaleDateString("ko-KR");
+let records=[],goal=2000;
+try{const saved=JSON.parse(localStorage.getItem("calorieTrackerV1")||"{}");if(saved.date===today){records=saved.records||[];goal=saved.goal||2000;}}catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>Number(n).toLocaleString("ko-KR",{maximumFractionDigits:1});
+function save(){localStorage.setItem("calorieTrackerV1",JSON.stringify({date:today,records,goal}));}
+function total(){return records.reduce((s,r)=>s+r.calorie,0);}
+function render(){
+ const sum=total(),remain=goal-sum,rate=sum/goal*100;
+ $("totalTop").innerHTML=fmt(sum)+' <small>kcal</small>';$("goalTop").innerHTML=fmt(goal)+' <small>kcal</small>';
+ $("remainTop").innerHTML=fmt(Math.abs(remain))+' <small>kcal</small>';$("remainCaption").textContent=remain>=0?"목표까지 남은 칼로리":"목표보다 초과한 칼로리";
+ $("rate").textContent=fmt(rate)+"%";$("progress").style.width=Math.min(rate,100)+"%";
+ $("progressLeft").textContent=fmt(sum)+" kcal 섭취";$("progressRight").textContent="목표 "+fmt(goal)+" kcal";
+ $("evaluation").textContent=sum===0?"아직 기록된 음식이 없습니다.":sum<goal*.8?"목표보다 섭취량이 적습니다.":sum<=goal?"설정한 목표 범위 안에서 섭취했습니다.":"설정한 목표보다 "+fmt(sum-goal)+" kcal 초과했습니다.";
+ $("mealBars").innerHTML=meals.map(m=>{const v=records.filter(r=>r.meal===m).reduce((s,r)=>s+r.calorie,0);return `<div class="meal-line"><b>${m}</b><div class="bar"><i style="width:${sum?Math.min(v/sum*100,100):0}%"></i></div><span>${fmt(v)} kcal</span></div>`}).join("");
+ $("recordCount").textContent=records.length+"건";$("goalInput").value=goal;
+ $("records").innerHTML=records.length?records.map((r,i)=>`<div class="record"><div><strong>${r.food}</strong><small>${r.meal} · ${fmt(r.amount)}인분</small></div><div class="record-right">${fmt(r.calorie)} kcal <button class="btn danger" onclick="removeRecord(${i})">삭제</button></div></div>`).join(""):'<div class="empty">아직 기록된 음식이 없습니다.<br>왼쪽에서 음식을 추가해 보세요.</div>';
+}
+function populate(){const names=Object.keys(foodDB);$("foodSelect").innerHTML='<option value="">음식을 선택하세요</option>'+names.map(n=>`<option value="${n}">${n} (${foodDB[n]} kcal)</option>`).join("");$("foodGrid").innerHTML=names.map(n=>`<button class="food-chip" data-food="${n}"><b>${n}</b><span>${foodDB[n]} kcal</span></button>`).join("");document.querySelectorAll(".food-chip").forEach(b=>b.addEventListener("click",()=>{$("foodSelect").value=b.dataset.food; $("lookup").value=b.dataset.food; lookupFood();}));}
+function add(food,cal,amount,meal){if(!food||!Number.isFinite(cal)||cal<=0||!Number.isFinite(amount)||amount<=0){alert("음식 이름, 칼로리, 섭취량을 올바르게 입력해 주세요.");return;}records.push({food,meal,amount,calorie:cal*amount});save();render();}
+$("addSelected").onclick=()=>{const n=$("foodSelect").value,a=Number($("amount").value);if(!n){alert("음식을 먼저 선택해 주세요.");return;}add(n,foodDB[n],a,$("meal").value);};
+$("addCustom").onclick=()=>{const n=$("customName").value.trim(),c=Number($("customCal").value),a=Number($("amount").value);if(!n){alert("음식 이름을 입력해 주세요.");return;}if(!Number.isFinite(c)||c<=0){alert("1인분 칼로리를 올바르게 입력해 주세요.");return;}add(n,c,a,$("meal").value);$("customName").value="";$("customCal").value="";};
+function lookupFood(){const n=$("lookup").value.trim();$("lookupResult").textContent=!n?"음식 이름을 입력하면 칼로리를 확인할 수 있습니다.":foodDB[n]!==undefined?`${n}의 1인분 칼로리는 ${foodDB[n]} kcal입니다.`:"등록되지 않은 음식입니다. 직접 음식 입력 기능을 이용해 기록할 수 있습니다.";}
+$("lookup").addEventListener("input",lookupFood);
+window.removeRecord=i=>{records.splice(i,1);save();render();};
+$("saveGoal").onclick=()=>{const v=Number($("goalInput").value);if(!Number.isFinite(v)||v<=0){alert("목표 칼로리는 0보다 큰 숫자로 입력해 주세요.");return;}goal=v;save();render();};
+$("clearAll").onclick=()=>{if(records.length&&confirm("오늘 기록을 모두 삭제할까요?")){records=[];save();render();}};
+populate();render();
+</script>
+</body></html>
